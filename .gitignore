@@ -1,0 +1,44 @@
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.env.*
+!.env.example
+
+.ipynb_checkpoints/
+
+data/*.csv
+data/*.xlsx
+data/*.parquet
+
+# Model files and generated artifacts
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.onnx
+models/
+artifacts/
+mlruns/
+
+# Logs
+*.log
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

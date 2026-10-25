@@ -1,0 +1,981 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Fraud Sprint Checklist</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a working console. Header with overall progress, a left rail of sheets (Overview, Setup, Day 1-5),
+   one sheet visible at a time. Each day is a stack of task cards with real checkboxes, notes and copyable commands. */
+:root{
+  --paper:#F2F5F8; --card:#FFFFFF; --sunk:#E8EDF2; --line:#D3DBE3;
+  --ink:#13202C; --muted:#586979;
+  --accent:#0B6E8E; --accent-soft:#DCEEF4;
+  --done:#177A52; --done-soft:#DDF1E7; --on-done:#FFFFFF;
+  --flag:#B8430E; --flag-soft:#FBE8DC;
+  --font-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --font-body:'Instrument Sans','Segoe UI',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1620; --card:#141F2B; --sunk:#101A25; --line:#243445;
+    --ink:#E4ECF3; --muted:#8DA1B4;
+    --accent:#52C4E8; --accent-soft:#12303D;
+    --done:#46D493; --done-soft:#12352A; --on-done:#08241A;
+    --flag:#F4A06B; --flag-soft:#3A2417;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1620; --card:#141F2B; --sunk:#101A25; --line:#243445;
+  --ink:#E4ECF3; --muted:#8DA1B4;
+  --accent:#52C4E8; --accent-soft:#12303D;
+  --done:#46D493; --done-soft:#12352A; --on-done:#08241A;
+  --flag:#F4A06B; --flag-soft:#3A2417;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font:15px/1.55 var(--font-body);
+  padding-block:20px 72px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:1160px;margin:0 auto}
+button{font-family:inherit}
+code{font-family:var(--font-mono);font-size:.87em;background:var(--sunk);padding:1px 5px;border-radius:4px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.eyebrow{font:500 11px/1 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 clamp(1.7rem,4vw,2.5rem)/1.05 var(--font-display);margin:8px 0 0;letter-spacing:-.01em;text-wrap:balance}
+.topright{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ring{position:relative;width:60px;height:60px;flex:none}
+.ring svg{display:block;transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:600 13px var(--font-mono)}
+.btn{font:500 13.5px var(--font-body);padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--paper);font-weight:600}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.btn.danger{color:var(--flag);border-color:var(--flag)}
+.savestat{font:500 12px var(--font-mono);color:var(--muted);display:flex;align-items:center;gap:7px}
+.savestat i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.savestat[data-s="saved"] i{background:var(--done)}
+.savestat[data-s="saving"] i{background:var(--accent)}
+.savestat[data-s="local"] i{background:var(--flag)}
+
+/* shell */
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);gap:28px;align-items:start}
+.rail{position:sticky;top:16px;display:flex;flex-direction:column;gap:4px}
+.rb{display:grid;grid-template-columns:1fr auto;gap:1px 8px;text-align:left;padding:9px 12px;border:0;border-left:3px solid var(--line);
+  background:linear-gradient(90deg,var(--accent-soft) var(--p,0%),transparent var(--p,0%));color:var(--ink);font-size:14px;cursor:pointer;border-radius:0 6px 6px 0}
+.rb:hover{border-left-color:var(--accent)}
+.rb.on{border-left-color:var(--accent);font-weight:600}
+.rb .rp{font:500 12px var(--font-mono);color:var(--muted)}
+.rb .rd{grid-column:1/-1;font-size:12px;color:var(--muted);font-weight:400}
+.rb .today{color:var(--flag);font-weight:600}
+.railgap{height:8px}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:16px}
+  .rail{top:env(safe-area-inset-top,0px);z-index:5;flex-direction:row;overflow-x:auto;background:var(--paper);padding:8px 0;border-bottom:1px solid var(--line);gap:6px}
+  .rb{white-space:nowrap;border:1px solid var(--line);border-radius:8px;display:flex;gap:8px;align-items:center}
+  .rb.on{border-color:var(--accent)}
+  .rb .rd,.railgap{display:none}
+}
+
+/* day header */
+.dayhead{padding:0 0 18px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.daytag{font:600 12px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.daytag .today{color:var(--flag);margin-left:10px}
+.dayhead h2,.sheethead h2{font:700 clamp(1.5rem,3.4vw,2.1rem)/1.1 var(--font-display);margin:6px 0 6px;text-wrap:balance}
+.goal{color:var(--muted);margin:0 0 12px;max-width:64ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{font:500 12px var(--font-mono);padding:4px 9px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--card)}
+.bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.bar.done i{background:var(--done)}
+.barlab{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:8px;font:500 12px var(--font-mono);color:var(--muted)}
+.barlab b{color:var(--ink)}
+.dayact{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+/* task cards */
+details.task{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 14px}
+details.task>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+details.task>summary::-webkit-details-marker{display:none}
+.tcode{font:600 12px var(--font-mono);color:var(--accent);background:var(--accent-soft);padding:3px 7px;border-radius:5px}
+.ttitle{flex:1;min-width:0;font:600 1.05rem/1.25 var(--font-display)}
+.tcount{font:500 12px var(--font-mono);color:var(--muted);white-space:nowrap}
+details.task.complete .tcount{color:var(--done)}
+details.task.complete .tcode{background:var(--done-soft);color:var(--done)}
+.chev{width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s;margin:0 4px 3px 2px}
+details[open] .chev{transform:rotate(-135deg);margin-bottom:-3px}
+.tbody{padding:4px 16px 16px;border-top:1px solid var(--line)}
+
+/* rows */
+.row{padding:10px 0;border-bottom:1px dashed var(--line);display:flex;flex-direction:column;gap:8px;min-width:0}
+.row:last-child{border-bottom:0}
+.chk{display:flex;gap:11px;align-items:flex-start;cursor:pointer}
+.chk input{position:absolute;opacity:0;width:18px;height:18px;margin:0}
+.box{flex:none;width:18px;height:18px;margin-top:2px;border:1.5px solid var(--muted);border-radius:4px;display:grid;place-items:center;background:var(--card);transition:background .12s,border-color .12s}
+.chk input:checked+.box{background:var(--done);border-color:var(--done)}
+.chk input:checked+.box::after{content:"";width:9px;height:5px;border-left:2px solid var(--on-done);border-bottom:2px solid var(--on-done);transform:rotate(-45deg) translate(1px,-1px)}
+.chk input:focus-visible+.box{outline:2px solid var(--accent);outline-offset:2px}
+.txt{min-width:0;overflow-wrap:anywhere}
+.txt small{display:block;color:var(--muted);font-size:.86rem;margin-top:1px}
+.row.done .txt{color:var(--muted)}
+.row.cp{background:var(--accent-soft);border-radius:8px;border-bottom:0;padding:10px 12px;margin-top:10px}
+.row.cp.done{background:var(--done-soft)}
+.cptag{font:600 10.5px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:1px}
+.row.cp.done .cptag{color:var(--done)}
+.row.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%,40%{background:var(--flag-soft)}100%{background:transparent}}
+.sub{font:600 11px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 2px}
+
+.valin{font:13px var(--font-mono);padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);width:100%;max-width:460px}
+.code{position:relative;min-width:0}
+.code pre{margin:0;padding:12px 70px 12px 14px;background:var(--sunk);border:1px solid var(--line);border-radius:8px;overflow-x:auto;font:12.5px/1.6 var(--font-mono);color:var(--ink)}
+.code code{background:none;padding:0;font-size:inherit}
+.copy{position:absolute;top:7px;right:7px;font:500 11px var(--font-mono);padding:4px 8px;border-radius:5px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+.copy:hover{color:var(--accent);border-color:var(--accent)}
+.callout{border-left:3px solid var(--flag);background:var(--flag-soft);padding:10px 14px;margin:14px 0 4px;border-radius:0 8px 8px 0;font-size:.92rem}
+.callout b{color:var(--flag)}
+.notes{margin-top:14px}
+.notes label{display:block;font:600 11px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.notes textarea,.ta{width:100%;min-height:62px;resize:vertical;font:13.5px/1.5 var(--font-body);padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+
+/* segmented controls */
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;align-self:flex-start;background:var(--card)}
+.seg button{font:500 12.5px var(--font-body);padding:7px 12px;background:transparent;color:var(--muted);border:0;border-right:1px solid var(--line);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button:hover{color:var(--ink)}
+.seg button.on{font-weight:600}
+.seg button.on.t-flag{background:var(--flag-soft);color:var(--flag)}
+.seg button.on.t-accent{background:var(--accent-soft);color:var(--accent)}
+.seg button.on.t-done{background:var(--done-soft);color:var(--done)}
+
+/* wrap-up */
+.wrapup{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 16px 14px;margin-top:22px}
+.wrapup h3,.sheet h3{font:700 1.05rem/1.2 var(--font-display);margin:14px 0 2px}
+
+/* overview + setup */
+.sheethead{margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.lead{color:var(--muted);max-width:66ch;margin:0}
+.grid5{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:12px 0 26px}
+.dcard{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;color:var(--ink);min-width:0}
+.dcard:hover{border-color:var(--accent)}
+.dcard .k{font:600 11px var(--font-mono);letter-spacing:.12em;color:var(--accent);text-transform:uppercase}
+.dcard b{font:600 1rem/1.25 var(--font-display)}
+.dcard span.d{font-size:.86rem;color:var(--muted)}
+.dcard .bar{margin-top:auto}
+.dcard .pc{font:500 12px var(--font-mono);color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px 0;margin:10px 0 26px}
+.node{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:13px;min-width:0}
+.node em{display:block;font:500 10.5px var(--font-mono);color:var(--accent);font-style:normal;letter-spacing:.08em;text-transform:uppercase}
+.arrow{align-self:center;padding:0 6px;color:var(--muted);font-family:var(--font-mono)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:26px}
+.panelbox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 16px 16px;min-width:0}
+ol.rules{margin:10px 0 0;padding-left:22px}
+ol.rules li{margin-bottom:8px;padding-left:4px}
+ol.rules li::marker{font:600 13px var(--font-mono);color:var(--accent)}
+.loop{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
+.loop div{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:.88rem;color:var(--muted)}
+.loop b{display:block;color:var(--ink);font:600 .95rem var(--font-display)}
+.field{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.field input[type=date]{font:13px var(--font-mono);padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0 8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font:700 1.5rem/1.1 var(--font-display)}
+.stat span{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stat.s-flag b{color:var(--flag)} .stat.s-accent b{color:var(--accent)} .stat.s-done b{color:var(--done)}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+.group{margin:22px 0 0}
+.group h3{display:flex;align-items:baseline;gap:10px}
+.group h3 span{font:500 12px var(--font-mono);color:var(--muted)}
+.trow{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px}
+.trow .tmain{flex:1 1 300px;min-width:0}
+.trow .nm{font-weight:600}
+.dtag{font:500 11px var(--font-mono);color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:5px;margin-left:8px;white-space:nowrap}
+.trow p{margin:2px 0 0;color:var(--muted);font-size:.88rem}
+.trow .code{margin-top:8px}
+.trow .code pre{padding-top:8px;padding-bottom:8px}
+.hint{color:var(--muted);font-size:.9rem;margin:6px 0 0}
+.datactl{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.confirm{background:var(--flag-soft);border-left:3px solid var(--flag);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.confirm .btn{margin:8px 8px 0 0}
+body.hide-done .row.done:not(.cp),body.hide-done details.task.complete,body.hide-done .trow.sorted-hide{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">AIML-01 · Real-time fraud detection · 5-day sprint</div>
+      <h1>Fraud Sprint Checklist</h1>
+    </div>
+    <div class="topright">
+      <div class="ring" aria-label="Overall progress">
+        <svg width="60" height="60" viewBox="0 0 60 60" aria-hidden="true">
+          <circle cx="30" cy="30" r="25" fill="none" stroke="var(--sunk)" stroke-width="6"></circle>
+          <circle id="ringfg" cx="30" cy="30" r="25" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="157.08" stroke-dashoffset="157.08"></circle>
+        </svg>
+        <b id="ringpct">0%</b>
+      </div>
+      <button class="btn primary" type="button" id="nextbtn">Next up</button>
+      <button class="btn" type="button" id="hidebtn" aria-pressed="false">Hide done</button>
+      <div class="savestat" id="savestat" data-s="loading" role="status"><i></i><span id="savetxt">Loading saved progress…</span></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="rail" id="rail" aria-label="Sheets"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- content ---------- */
+var TREE="financial-fraud-detection/\n├── data/\n├── notebooks/\n├── src/\n│   ├── features/\n│   ├── models/\n│   └── monitoring/\n├── api/\n├── streaming/\n├── dashboard/\n├── feature_repo/\n├── tests/\n├── deployment/\n└── docs/";
+var VENV="python -m venv .venv\n\n# Windows\n.venv\\Scripts\\activate\n\n# macOS / Linux\nsource .venv/bin/activate";
+var PIP1="pip install pandas numpy matplotlib seaborn scikit-learn xgboost jupyter mlflow joblib pytest";
+var LOAD="import pandas as pd\n\ndf = pd.read_csv(\"data/PS_20174392719_1491204439457_log.csv\")\nprint(df.head())\nprint(df.shape)\nprint(df.info())\nprint(df.isna().sum())\nprint(df.duplicated().sum())\nprint(df[\"isFraud\"].value_counts())\nprint(df[\"isFraud\"].value_counts(normalize=True))";
+var RESP="{\n  \"transaction_id\": \"TX1001\",\n  \"fraud_probability\": 0.94,\n  \"risk_level\": \"HIGH\",\n  \"decision\": \"REVIEW\"\n}\n// Illustrative only. Not a real prediction.";
+var FORMULA="S = α · P_XGB + (1 − α) · P_GNN\n# choose α on validation data; S is a ranking score, not a calibrated probability";
+var STD_EVIDENCE=[
+  "Commit the working code with a clear message",
+  "Save screenshots or command output as evidence (for example in docs/)",
+  "Write real measured numbers in the task notes above. Nothing estimated",
+  "List what is finished and what remains for tomorrow"
+];
+
+var DAYS=[
+{id:"d1",n:1,short:"Model",name:"Build the fraud detection model",goal:"A trained and evaluated fraud model.",hours:"8–12 hours",deliver:"Data, features and ML model",
+ blurb:"Dataset exploration, feature engineering, XGBoost training, class-imbalance handling and PR-AUC evaluation.",
+ crit:["A reproducible training script","A saved model and preprocessing pipeline","An evaluation report with real measurements","An MLflow experiment with the runs recorded"],
+ tasks:[
+ {id:"t11",code:"1.1",title:"Set up the development environment",steps:[
+  {t:"Install or verify Python 3.11 (or a compatible version)",c:"python --version"},
+  {t:"Install or verify VS Code"},
+  {t:"Install Git and create a GitHub account"},
+  {t:"Install Jupyter Notebook"},
+  {t:"Create the project folder structure",c:TREE},
+  {t:"Create and activate a virtual environment",c:VENV},
+  {t:"Install the initial libraries",c:PIP1},
+  {t:"Save the installed dependencies",c:"pip freeze > requirements.txt"},
+  {t:"Add a `.gitignore` so `.venv/` and the large dataset file stay out of Git",c:".venv/\ndata/*.csv\n__pycache__/\n.ipynb_checkpoints/"},
+  {t:"Initialize the Git repository and make the first commit",c:"git init\ngit add .\ngit commit -m \"Initial project structure\""}
+ ],check:"Python runs, imports work, and the repository is initialized with Git."},
+ {id:"t12",code:"1.2",title:"Download and understand the dataset (PaySim)",steps:[
+  {t:"Download PaySim from Kaggle into `data/`",d:"Use the actual filename you download. It may differ from the example."},
+  {t:"Load the CSV with pandas and inspect rows, columns and data types",c:LOAD},
+  {t:"Identify missing values and duplicates"},
+  {t:"Check the distribution of fraud labels (count and percentage)"},
+  {t:"Plot transaction amounts and transaction types"},
+  {t:"Decide which columns are safe to use for predictions"}
+ ],check:"You know how many rows and columns the dataset has and what percentage of transactions are labeled fraudulent."},
+ {id:"t13",code:"1.3",title:"Engineer useful features",steps:[
+  {t:"Use transaction amount and type"},
+  {t:"Use the sender's balance before and after the transaction"},
+  {t:"Use the receiver's balance before and after the transaction"},
+  {t:"Add number of recent transactions by an account, from past activity only"},
+  {t:"Add average transaction amount, based only on previous activity"},
+  {t:"Exclude the transaction ID and `isFraud` from the inputs"},
+  {t:"Treat `isFlaggedFraud` carefully",d:"It may leak an existing detection rule into your model."}
+ ],check:"The feature matrix contains numeric or properly encoded features and the correct fraud target.",
+ callout:"Start with a simple, reliable feature set. Add velocity and historical account statistics only when they can be computed without using future data."},
+ {id:"t14",code:"1.4",title:"Train the XGBoost model",steps:[
+  {t:"Choose a chronological train/test split where transaction ordering permits it"},
+  {t:"Fit preprocessing on training data only"},
+  {t:"Handle class imbalance with class weights or `scale_pos_weight`"},
+  {t:"Train an XGBoost classifier"},
+  {t:"Save the trained model and the preprocessing pipeline"},
+  {t:"Evaluate: precision"},
+  {t:"Evaluate: recall"},
+  {t:"Evaluate: F1-score"},
+  {t:"Evaluate: PR-AUC"},
+  {t:"Evaluate: confusion matrix"}
+ ],check:"The model produces fraud scores on held-out data, and the evaluation report records real measurements."},
+ {id:"t15",code:"1.5",title:"Record results in MLflow",steps:[
+  {t:"Log model parameters"},
+  {t:"Log training dataset and split details"},
+  {t:"Log precision, recall and PR-AUC"},
+  {t:"Log model artifacts"},
+  {t:"Save the selected model at a stable path for the API to load on Day 2"}
+ ],check:"An MLflow experiment shows your runs with parameters, metrics and artifacts."}
+ ]},
+
+{id:"d2",n:2,short:"Pipeline",name:"Build the real-time transaction pipeline",goal:"Transactions can be scored through an API and Kafka.",hours:"8–12 hours",deliver:"API, Kafka and feature store",
+ blurb:"Kafka producer and consumer, FastAPI scoring service and Feast feature retrieval.",
+ crit:["You can replay transactions through Kafka","The service returns model-generated risk scores","You recorded the time of the whole pipeline, not just the model prediction"],
+ tasks:[
+ {id:"t21",code:"2.1",title:"Build the FastAPI service",steps:[
+  {t:"Install the backend dependencies",c:"pip install fastapi uvicorn httpx"},
+  {t:"Create `api/main.py`"},
+  {t:"Accept a transaction request"},
+  {t:"Validate required fields"},
+  {t:"Apply the same feature transformations used during training"},
+  {t:"Load the trained model (once, at startup)"},
+  {t:"Return a risk score and risk category",c:RESP},
+  {t:"Handle malformed requests and unexpected errors"},
+  {t:"Run the service",c:"uvicorn api.main:app --reload"},
+  {t:"Test it through the FastAPI docs at `/docs`"}
+ ],check:"Valid transactions receive predictions and invalid requests return useful error responses."},
+ {id:"t22",code:"2.2",title:"Set up Kafka with a producer and consumer",steps:[
+  {t:"Run Kafka using Docker Compose, following the official Kafka quickstart"},
+  {t:"Install a compatible Kafka Python client",c:"pip install confluent-kafka"},
+  {t:"Create `streaming/producer.py` that replays historical transactions at a controlled rate"},
+  {t:"Create `streaming/consumer.py` that validates each event, calls the scoring service and records the result"},
+  {t:"Handle duplicate transaction IDs"},
+  {t:"Handle failed messages"}
+ ],check:"You can publish a batch of transactions and see predictions generated by the consumer."},
+ {id:"t23",code:"2.3",title:"Integrate Feast",steps:[
+  {t:"Install Feast and initialize a local feature repository",c:"pip install feast"},
+  {t:"Define the entity and the feature view"},
+  {t:"Register the features"},
+  {t:"Materialize historical features into the online store"},
+  {t:"Retrieve the latest available features for an account during scoring"},
+  {t:"Verify that training and serving use consistent feature definitions"},
+  {pick:true,t:"Integration status (be accurate)",opts:[["Online store working","accent"],["Local retrieval path only","flag"],["Not working yet","flag"]]}
+ ],check:"The service can retrieve features from the feature store and use them for prediction.",
+ callout:"Feast is not simply a CSV file or a dictionary. If the full online-store integration takes too long, implement the feature definitions and a working local retrieval path first, then document what is incomplete."},
+ {id:"t24",code:"2.4",title:"Connect the components",steps:[
+  {t:"Kafka producer publishes to the topic"},
+  {t:"Kafka consumer reads from the topic"},
+  {t:"Consumer calls Feast feature retrieval and the FastAPI scoring service"},
+  {t:"A scored transaction and alert event is produced"},
+  {t:"Record how long the whole pipeline takes, not just the model prediction"}
+ ],check:"Replaying a batch through Kafka returns model-generated risk scores from the service."}
+ ]},
+
+{id:"d3",n:3,short:"Rings & drift",name:"Add fraud-ring detection and monitoring",goal:"Account connections and model monitoring work.",hours:"8–12 hours",deliver:"Graph analysis, MLflow and drift monitoring",
+ blurb:"Account relationship graph, a basic PyTorch Geometric model where feasible, combined risk scoring, Evidently drift reports.",
+ crit:["Graph analysis is available","The combined scoring logic is tested where applicable","The monitoring report can be generated"],
+ tasks:[
+ {id:"t31",code:"3.1",title:"Build the relationship graph (NetworkX)",steps:[
+  {t:"Install NetworkX",c:"pip install networkx"},
+  {t:"Represent accounts as nodes"},
+  {t:"Represent transactions or observed relationships as edges"},
+  {t:"Calculate node degree and other useful graph features"},
+  {t:"Identify connected components and repeated suspicious connections"},
+  {t:"Create a graph visualization for the demo"}
+ ],check:"The system can display a group of connected accounts and explain the relationships between them."},
+ {id:"t32",code:"3.2",title:"Train a basic graph neural network",steps:[
+  {t:"Install compatible versions of PyTorch and PyTorch Geometric, following their installation instructions"},
+  {t:"Convert graph nodes, edges and features into the required tensor format"},
+  {t:"Use a simple graph convolutional model"},
+  {t:"Train with appropriate labels and a time-aware evaluation strategy"},
+  {t:"Evaluate the graph model independently"},
+  {t:"Compare it against the XGBoost baseline"},
+  {pick:true,t:"GNN status (be accurate)",opts:[["Trained and evaluated","done"],["Partly done, documented","accent"],["Not done: graph analysis only","flag"]]}
+ ],check:"You can show the graph results and state exactly how far the GNN got.",
+ callout:"Keep the graph model honest. A connected-components algorithm is not a GNN. If full training is too expensive, deliver the working graph analysis and label the GNN as incomplete."},
+ {id:"t33",code:"3.3",title:"Combine the scores",steps:[
+  {t:"Combine the XGBoost score and the graph-model score with a weight chosen on validation data",c:FORMULA},
+  {t:"Select the alert threshold on validation data"},
+  {t:"Evaluate the combined score"},
+  {t:"Compare XGBoost-only results with the combined system"}
+ ],check:"You can compare XGBoost-only results with the combined system.",
+ callout:"Do not assume the weighted average is a calibrated fraud probability."},
+ {id:"t34",code:"3.4",title:"Add Evidently AI drift monitoring",steps:[
+  {t:"Install Evidently",c:"pip install evidently"},
+  {t:"Select the reference training data"},
+  {t:"Compare it with incoming or replayed transaction features"},
+  {t:"Generate a data-drift report"},
+  {t:"Define a drift threshold that triggers a retraining workflow"},
+  {t:"Record the trigger, and require validation before deploying a replacement model"}
+ ],check:"The system generates a drift report and demonstrates the configured trigger logic."},
+ {id:"t35",code:"3.5",title:"Verify MLflow tracking",steps:[
+  {t:"Confirm training and evaluation runs are recorded"},
+  {t:"Add graph-model experiments if the GNN is implemented"}
+ ],check:"All runs appear in MLflow with parameters and metrics."}
+ ]},
+
+{id:"d4",n:4,short:"Dashboard & deploy",name:"Build the dashboard and deploy the application",goal:"A usable interface and repeatable deployment.",hours:"8–12 hours",deliver:"Integrated analyst interface and local deployment",
+ blurb:"Streamlit analyst dashboard with case status, SQLite storage, Docker images and a Minikube deployment.",
+ crit:["The dashboard reads real prediction results","The services run in containers","A documented local deployment is available"],
+ tasks:[
+ {id:"t41",code:"4.1",title:"Build the analyst dashboard (Streamlit)",steps:[
+  {t:"Install Streamlit",c:"pip install streamlit"},
+  {t:"Create `dashboard/app.py`"},
+  {t:"Show total transactions processed"},
+  {t:"Show high-risk alerts"},
+  {t:"Show fraud metrics from labeled evaluation data"},
+  {t:"Show a transaction table with risk scores"},
+  {t:"Show transaction details and alert reasons"},
+  {t:"Show linked accounts or suspicious groups"},
+  {t:"Support case status: New, Investigating, Confirmed Fraud, False Positive"},
+  {t:"Store analyst feedback in a persistent database or file, so it survives a restart"}
+ ],check:"An analyst can select an alert, inspect its information and update the case status."},
+ {id:"t42",code:"4.2",title:"Connect the dashboard to the backend",steps:[
+  {t:"The Kafka consumer scores a transaction"},
+  {t:"The result is saved in a database (SQLite is fine for a local prototype)"},
+  {t:"FastAPI exposes transaction and alert endpoints"},
+  {t:"Streamlit retrieves the latest records and displays them"},
+  {t:"Analyst feedback is written back to the backend"}
+ ],check:"Replaying transactions makes the dashboard update with real model-generated results.",
+ callout:"No hard-coded sample alerts. The dashboard must show results produced by the pipeline."},
+ {id:"t43",code:"4.3",title:"Containerize the services",steps:[
+  {t:"Write a Dockerfile for the API"},
+  {t:"Write a Dockerfile for the dashboard"},
+  {t:"Write Docker Compose configuration for the services that run together"},
+  {t:"Package the application dependencies"},
+  {t:"Configure service ports and environment variables"},
+  {t:"Keep secrets out of the repository"},
+  {t:"Add health checks where appropriate"},
+  {t:"Verify that services communicate inside the container network"}
+ ],check:"The application starts from a documented set of commands."},
+ {id:"t44",code:"4.4",title:"Deploy with Minikube",steps:[
+  {t:"Install Docker Desktop, Minikube and kubectl"},
+  {t:"Create Kubernetes manifests: deployments, services and required configuration"},
+  {t:"Deploy the API and the dashboard first"},
+  {t:"Add Kafka and supporting services to the cluster if time and local resources allow"},
+  {t:"Document the architecture accurately if some infrastructure stays in Docker Compose"},
+  {pick:true,t:"Deployment scope (be accurate)",opts:[["API, dashboard and Kafka in cluster","done"],["API and dashboard only","accent"],["Compose only, documented","flag"]]},
+  {t:"Show service health and logs"}
+ ],check:"You can demonstrate the deployed application and show its service health and logs.",
+ callout:"Do not let Kubernetes block the core project. Make the application work locally first."}
+ ]},
+
+{id:"d5",n:5,short:"Test & submit",name:"Test everything and submit",goal:"A verifiable project submission.",hours:"8–12 hours",deliver:"Verified demo, repository and presentation",
+ blurb:"Automated tests, measured performance, documentation, demo recording and a 10-minute presentation.",
+ crit:["The test suite runs and critical failures are fixed","Real performance numbers are recorded","The README, demo and presentation are ready"],
+ tasks:[
+ {id:"t51",code:"5.1",title:"Run automated tests",steps:[
+  {t:"Test feature engineering"},
+  {t:"Test model loading and prediction"},
+  {t:"Test API input validation"},
+  {t:"Test the fraud-score response format"},
+  {t:"Test Kafka event processing"},
+  {t:"Test duplicate event handling"},
+  {t:"Test graph construction and score combination"},
+  {t:"Test case status updates"},
+  {t:"Test drift detection and the retraining trigger logic"},
+  {t:"Run the full suite",c:"pytest -v"},
+  {t:"Fix critical failures before recording the demo"}
+ ],check:"The suite passes, and you saved the output for the testing report."},
+ {id:"t52",code:"5.2",title:"Measure actual performance",steps:[
+  {v:"PR-AUC",h:"held-out data",ph:"e.g. 0.00"},
+  {v:"Precision and recall",h:"alert quality and fraud coverage",ph:"precision / recall"},
+  {v:"p50 and p95 latency",h:"typical and slower scoring requests",ph:"ms / ms"},
+  {v:"End-to-end latency",h:"Kafka event to stored result or visible alert",ph:"ms"},
+  {v:"Throughput",h:"transactions processed per second",ph:"tx/s"},
+  {v:"Error rate",h:"failed events and failed API requests",ph:"%"},
+  {v:"Drift results",h:"whether the configured monitoring detects changes",ph:"detected / not detected"},
+  {v:"Machine specifications",h:"CPU, RAM, OS",ph:"e.g. 8 cores, 16 GB"},
+  {v:"Dataset split and test volume",h:"how many transactions you tested with",ph:"e.g. 80/20 chronological, 10,000 tx"},
+  {v:"Where measured",h:"locally or in Kubernetes",ph:"local / Minikube"}
+ ],check:"Every number comes from a real run on your machine.",
+ callout:"Record real metrics rather than estimated or invented numbers."},
+ {id:"t53",code:"5.3",title:"Complete the documentation",steps:[
+  {t:"README: project overview and problem statement"},
+  {t:"README: architecture diagram"},
+  {t:"README: technology stack"},
+  {t:"README: dataset source and license notes"},
+  {t:"README: setup and installation instructions"},
+  {t:"README: commands to train the model"},
+  {t:"README: commands to start the application"},
+  {t:"README: API request and response examples"},
+  {t:"README: evaluation and latency results"},
+  {t:"README: known limitations and future improvements"},
+  {t:"Data dictionary"},
+  {t:"API documentation"},
+  {t:"Feature definitions"},
+  {t:"Testing report"},
+  {t:"Architecture diagram saved in `docs/`"},
+  {t:"Screenshots of the dashboard"},
+  {t:"Instructions for running the demo"}
+ ],check:"Someone new can clone the repository and run it from the README alone."},
+ {id:"t54",code:"5.4",title:"Record the demo",steps:[
+  {t:"Start the services"},
+  {t:"Replay a batch of transactions"},
+  {t:"Show the API returning fraud scores"},
+  {t:"Show the dashboard displaying the new alerts"},
+  {t:"Open an account graph and explain a suspicious connection"},
+  {t:"Change a case status and save analyst feedback"},
+  {t:"Generate a drift report"},
+  {t:"Show the deployment status and test results"}
+ ],check:"The recording shows the working system in this order, with no passwords, API keys or credentials visible."},
+ {id:"t55",code:"5.5",title:"Prepare the 10-minute presentation",steps:[
+  {t:"1 min: Problem and project objective"},
+  {t:"1 min: Architecture and technology stack"},
+  {t:"1.5 min: Dataset and feature engineering"},
+  {t:"2 min: Live fraud-detection demo"},
+  {t:"1 min: Graph analysis and fraud rings"},
+  {t:"1 min: Evaluation and latency results"},
+  {t:"1 min: Monitoring, testing and deployment"},
+  {t:"1.5 min: Challenges, personal contribution and next steps"}
+ ],check:"You ran it once against a timer and it fits in 10 minutes."},
+ {id:"t56",code:"5.6",title:"Final submission checklist",steps:[
+  {t:"Model and evaluation",d:"Saved model, EDA, feature engineering and PR-AUC report"},
+  {t:"Streaming and API",d:"Kafka producer/consumer and tested FastAPI service"},
+  {t:"Graph and monitoring",d:"Graph analysis, GNN status, MLflow and Evidently report"},
+  {t:"Dashboard",d:"Live alerts, case management and persistent feedback"},
+  {t:"Deployment",d:"Docker configuration and Kubernetes manifests, or a clearly documented deployment scope"},
+  {t:"Testing",d:"Automated test results and measured system performance"},
+  {t:"GitHub",d:"Clean commits, README, setup instructions and documented data source"},
+  {t:"Demo and presentation",d:"Working recording and 10-minute final presentation"},
+  {t:"Individual reflection",d:"What you built, what you learned and the challenges you handled"}
+ ],check:"All nine items are done and nothing is claimed that was not tested."}
+ ]}
+];
+
+var TOOL_GROUPS=[
+{g:"Core development",items:[
+ {id:"python",n:"Python 3.11 or compatible",day:1,why:"Runs everything in the project.",cmd:"python --version"},
+ {id:"vscode",n:"VS Code",day:1,why:"Editor for the whole repository.",cmd:"code --version"},
+ {id:"git",n:"Git",day:1,why:"Version control and daily commits.",cmd:"git --version"},
+ {id:"github",n:"GitHub account",day:1,why:"Hosts the final repository."},
+ {id:"jupyter",n:"Jupyter Notebook",day:1,why:"Data exploration and feature work.",cmd:"jupyter --version"},
+ {id:"venv",n:"Virtual environment (.venv)",day:1,why:"Keeps project packages isolated.",cmd:"python -m venv .venv"},
+ {id:"kaggle",n:"Kaggle account",day:1,why:"Needed to download the PaySim dataset."}
+]},
+{g:"Data and modelling libraries",items:[
+ {id:"pandas",n:"pandas and numpy",day:1,why:"Loading and shaping the data.",cmd:"python -c \"import pandas, numpy; print(pandas.__version__)\""},
+ {id:"mpl",n:"matplotlib and seaborn",day:1,why:"Plots for the exploration step.",cmd:"python -c \"import matplotlib, seaborn\""},
+ {id:"sklearn",n:"scikit-learn",day:1,why:"Preprocessing and metrics.",cmd:"python -c \"import sklearn; print(sklearn.__version__)\""},
+ {id:"xgboost",n:"xgboost",day:1,why:"The main fraud model.",cmd:"python -c \"import xgboost; print(xgboost.__version__)\""},
+ {id:"mlflow",n:"mlflow and joblib",day:1,why:"Experiment tracking and saving the model.",cmd:"mlflow --version"},
+ {id:"pytest",n:"pytest",day:5,why:"Automated tests.",cmd:"pytest --version"}
+]},
+{g:"Serving and streaming",items:[
+ {id:"fastapi",n:"FastAPI, uvicorn and httpx",day:2,why:"The scoring service.",cmd:"python -c \"import fastapi, uvicorn, httpx\""},
+ {id:"kafka",n:"confluent-kafka",day:2,why:"Producer and consumer client.",cmd:"python -c \"import confluent_kafka; print(confluent_kafka.version())\""},
+ {id:"feast",n:"Feast",day:2,why:"Feature definitions and online retrieval.",cmd:"feast version"}
+]},
+{g:"Graph and monitoring",items:[
+ {id:"networkx",n:"NetworkX",day:3,why:"Account relationship graph.",cmd:"python -c \"import networkx; print(networkx.__version__)\""},
+ {id:"torch",n:"PyTorch",day:3,why:"Needed for the graph neural network. Install by following the official instructions for your system.",cmd:"python -c \"import torch; print(torch.__version__)\""},
+ {id:"pyg",n:"PyTorch Geometric",day:3,why:"Graph layers and data format. Must match your PyTorch version.",cmd:"python -c \"import torch_geometric; print(torch_geometric.__version__)\""},
+ {id:"evidently",n:"Evidently",day:3,why:"Data-drift reports.",cmd:"python -c \"import evidently; print(evidently.__version__)\""}
+]},
+{g:"Dashboard and storage",items:[
+ {id:"streamlit",n:"Streamlit",day:4,why:"The analyst dashboard.",cmd:"streamlit --version"},
+ {id:"sqlite",n:"SQLite",day:4,why:"Comes with Python. Stores scored transactions and case feedback.",cmd:"python -c \"import sqlite3; print(sqlite3.sqlite_version)\""}
+]},
+{g:"Containers and Kubernetes",items:[
+ {id:"docker",n:"Docker Desktop",day:2,why:"Runs Kafka on Day 2 and every container after that.",cmd:"docker --version"},
+ {id:"compose",n:"Docker Compose",day:2,why:"Starts Kafka and the services together.",cmd:"docker compose version"},
+ {id:"minikube",n:"Minikube",day:4,why:"Local Kubernetes cluster.",cmd:"minikube version"},
+ {id:"kubectl",n:"kubectl",day:4,why:"Talks to the cluster.",cmd:"kubectl version --client"}
+]},
+{g:"Submission tools",items:[
+ {id:"recorder",n:"Screen recorder",day:5,why:"For the demo recording. Check it records audio and the full screen."},
+ {id:"slides",n:"Slide software",day:5,why:"For the 10-minute presentation."},
+ {id:"diagram",n:"Diagram tool",day:5,why:"Architecture diagram for the README and docs/."}
+]}
+];
+
+var SKILL_GROUPS=[
+{g:"Python and data",items:[
+ {id:"s-py",n:"Python basics",day:1,need:"Write functions, read errors, use a virtual environment."},
+ {id:"s-pd",n:"pandas and numpy",day:1,need:"Load a CSV, filter, group, create columns."},
+ {id:"s-viz",n:"Plotting with matplotlib or seaborn",day:1,need:"Histograms and bar charts for amounts and types."},
+ {id:"s-sql",n:"SQL and SQLite",day:4,need:"Create a table, insert rows, query the latest records."}
+]},
+{g:"Machine learning",items:[
+ {id:"s-ml",n:"ML fundamentals",day:1,need:"Train/test split, overfitting, data leakage, class imbalance."},
+ {id:"s-eval",n:"Evaluation metrics",day:1,need:"Precision, recall, F1, PR-AUC, confusion matrix, and why accuracy misleads here."},
+ {id:"s-time",n:"Time-aware features and splits",day:1,need:"Build features from past data only and split chronologically."},
+ {id:"s-xgb",n:"XGBoost",day:1,need:"Train a classifier and use scale_pos_weight."},
+ {id:"s-pipe",n:"scikit-learn pipelines",day:1,need:"Fit preprocessing on training data and reuse it when serving."},
+ {id:"s-mlflow",n:"MLflow tracking",day:1,need:"Log parameters, metrics and artifacts."},
+ {id:"s-drift",n:"Data drift and monitoring",day:3,need:"Know what drift is and what a retraining trigger does."},
+ {id:"s-gnn",n:"Graph neural networks (stretch)",day:3,need:"Nodes, edges, a simple GCN in PyTorch Geometric. Optional if time is short."}
+]},
+{g:"Backend and streaming",items:[
+ {id:"s-api",n:"REST APIs with FastAPI",day:2,need:"Routes, request validation, error responses."},
+ {id:"s-kafka",n:"Event streaming concepts",day:2,need:"Topics, producers, consumers, duplicates and retries."},
+ {id:"s-feast",n:"Feature stores (Feast)",day:2,need:"Entities, feature views, materialization, online retrieval."},
+ {id:"s-graph",n:"Graph basics and NetworkX",day:3,need:"Degree, connected components, drawing a small graph."},
+ {id:"s-st",n:"Streamlit",day:4,need:"Tables, selection, buttons and forms."}
+]},
+{g:"Deployment and delivery",items:[
+ {id:"s-docker",n:"Docker and Compose",day:4,need:"Write a Dockerfile, expose ports, pass environment variables."},
+ {id:"s-k8s",n:"Kubernetes basics",day:4,need:"Deployments, services, kubectl logs and describe."},
+ {id:"s-test",n:"Testing with pytest",day:5,need:"Write and run unit tests, test an API with a test client."},
+ {id:"s-git",n:"Git and GitHub workflow",day:1,need:"Commit, push, write clear messages."},
+ {id:"s-doc",n:"Technical writing",day:5,need:"A README someone else can follow."},
+ {id:"s-present",n:"Presenting and recording a demo",day:5,need:"Keep to time, show the working system in order."}
+]}
+];
+
+var RULES=[
+ "Use one main dataset: PaySim. Do not spend time integrating others.",
+ "Train XGBoost first. The fraud model is the foundation for everything else.",
+ "Build the complete transaction path early. Kafka to API to dashboard working beats several disconnected parts.",
+ "Use Streamlit instead of React, to avoid learning a second frontend stack.",
+ "Keep the graph model honest. Connected components are not a GNN.",
+ "Do not let Kubernetes block the core project. Make it work locally first.",
+ "Save evidence as you go: test results, metrics, screenshots and commits, every day."
+];
+
+/* ---------- state ---------- */
+var STORE_KEY="fraud-sprint-checklist-v1";
+var UI_KEY="fraud-sprint-checklist-ui";
+function blank(){return {v:1,updatedAt:0,checks:{},picks:{},values:{},notes:{},status:{},skills:{},start:""};}
+function normalize(s){
+  s=s||{};
+  return {v:1,updatedAt:Number(s.updatedAt)||0,checks:s.checks||{},picks:s.picks||{},values:s.values||{},notes:s.notes||{},status:s.status||{},skills:s.skills||{},start:typeof s.start==="string"?s.start:""};
+}
+var state=blank();
+var ui={hideDone:false,toolFilter:"all"};
+try{var raw=localStorage.getItem(STORE_KEY);if(raw)state=normalize(JSON.parse(raw));}catch(e){}
+try{var ru=localStorage.getItem(UI_KEY);if(ru){var u=JSON.parse(ru);ui.hideDone=!!u.hideDone;}}catch(e){}
+function localSave(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state));}catch(e){}}
+function uiSave(){try{localStorage.setItem(UI_KEY,JSON.stringify({hideDone:ui.hideDone}));}catch(e){}}
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function fmt(s){return esc(s).replace(/`([^`]+)`/g,"<code>$1</code>");}
+function $(sel,root){return (root||document).querySelector(sel);}
+function $$(sel,root){return Array.prototype.slice.call((root||document).querySelectorAll(sel));}
+var ITEMS=[]; // {id,day,task,kind}
+function reg(id,day,task,kind){ITEMS.push({id:id,day:day,task:task,kind:kind});}
+function codeBlock(c){return '<div class="code"><pre><code>'+esc(c)+'</code></pre><button class="copy" type="button" data-copy>Copy</button></div>';}
+function seg(kind,id,opts){
+  return '<div class="seg" role="group" data-kind="'+kind+'" data-id="'+id+'">'+opts.map(function(o,i){
+    return '<button type="button" class="t-'+o[1]+'" data-val="'+(kind==="pick"?i:o[2])+'" aria-pressed="false">'+esc(o[0])+'</button>';
+  }).join("")+'</div>';
+}
+
+/* ---------- render ---------- */
+function stepRow(step,day,task,key,isCp){
+  if(step.pick){
+    reg(key,day,task,"pick");
+    return '<div class="row" data-row="'+key+'"><div class="txt">'+fmt(step.t)+'</div>'+seg("pick",key,step.opts)+'</div>';
+  }
+  if(step.v){
+    reg(key,day,task,"check");
+    return '<div class="row" data-row="'+key+'"><label class="chk"><input type="checkbox" data-check="'+key+'"><span class="box"></span><span class="txt">'+fmt(step.v)+'<small>'+fmt(step.h)+'</small></span></label>'+
+      '<input class="valin" type="text" data-value="'+key+'" placeholder="'+esc(step.ph)+'" aria-label="'+esc(step.v)+' value"></div>';
+  }
+  reg(key,day,task,"check");
+  return '<div class="row'+(isCp?' cp':'')+'" data-row="'+key+'"><label class="chk"><input type="checkbox" data-check="'+key+'"><span class="box"></span><span class="txt">'+
+    (isCp?'<span class="cptag">Checkpoint</span>':'')+fmt(step.t)+(step.d?'<small>'+fmt(step.d)+'</small>':'')+'</span></label>'+(step.c?codeBlock(step.c):'')+'</div>';
+}
+function renderTask(day,t){
+  var h='<details class="task" open data-task="'+t.id+'"><summary><span class="tcode">'+t.code+'</span><span class="ttitle">'+fmt(t.title)+'</span><span class="tcount" data-tcount="'+t.id+'"></span><span class="chev" aria-hidden="true"></span></summary><div class="tbody">';
+  t.steps.forEach(function(s,i){h+=stepRow(s,day.id,t.id,t.id+".s"+i,false);});
+  h+=stepRow({t:t.check},day.id,t.id,t.id+".cp",true);
+  if(t.callout)h+='<div class="callout"><b>Keep in mind.</b> '+fmt(t.callout)+'</div>';
+  h+='<div class="notes"><label for="note-'+t.id+'">Notes and real numbers</label><textarea id="note-'+t.id+'" data-note="'+t.id+'" rows="2" placeholder="Row counts, scores, error messages, commit hash…"></textarea></div>';
+  return h+'</div></details>';
+}
+function renderDay(day){
+  var h='<section class="panel" id="p-'+day.id+'" hidden><header class="dayhead"><div class="daytag">Day '+day.n+'<span class="today" data-today="'+day.id+'" hidden>Today</span></div>'+
+   '<h2>'+fmt(day.name)+'</h2><p class="goal">'+fmt(day.goal)+' '+fmt(day.blurb)+'</p>'+
+   '<div class="chips"><span class="chip">'+day.hours+'</span><span class="chip" data-daydate="'+day.id+'">date not set</span></div>'+
+   '<div class="bar" data-daybarwrap="'+day.id+'"><i data-daybar="'+day.id+'"></i></div>'+
+   '<div class="barlab"><span><b data-daypct="'+day.id+'">0%</b> done</span><span data-daycount="'+day.id+'"></span></div>'+
+   '<div class="dayact"><button class="btn" type="button" data-expand="'+day.id+'">Expand all</button><button class="btn" type="button" data-collapse="'+day.id+'">Collapse all</button></div></header>';
+  day.tasks.forEach(function(t){h+=renderTask(day,t);});
+  h+='<div class="wrapup"><h3>Day '+day.n+' completion criteria</h3>';
+  day.crit.forEach(function(c,i){h+=stepRow({t:c},day.id,day.id+"w",day.id+".cr"+i,false);});
+  h+='<h3>Before you stop for the day</h3>';
+  STD_EVIDENCE.forEach(function(c,i){h+=stepRow({t:c},day.id,day.id+"w",day.id+".ev"+i,false);});
+  h+='<div class="notes"><label for="note-'+day.id+'w">Day notes</label><textarea id="note-'+day.id+'w" data-note="'+day.id+'w" rows="2" placeholder="What went well, what blocked you, what to do first tomorrow"></textarea></div></div></section>';
+  return h;
+}
+function renderOverview(){
+  var h='<section class="panel" id="p-overview"><div class="sheethead"><div class="daytag">Overview</div><h2>Five days, one working pipeline</h2>'+
+   '<p class="lead">Build the core system first, connect every component, verify the whole pipeline, then finish the documentation. Tick each step as you complete it. Everything you tick, type or rate is saved automatically.</p></div>';
+  h+='<h3 class="sub">Sprint plan (click a day to open it)</h3><div class="grid5">';
+  DAYS.forEach(function(d){
+    h+='<button type="button" class="dcard" data-go="'+d.id+'"><span class="k">Day '+d.n+'</span><b>'+fmt(d.deliver)+'</b><span class="d">'+fmt(d.blurb)+'</span><span class="pc"><span data-daypct="'+d.id+'">0%</span> · <span data-daydate="'+d.id+'">date not set</span></span><div class="bar"><i data-daybar="'+d.id+'"></i></div></button>';
+  });
+  h+='</div><h3 class="sub">The pipeline you are building</h3><div class="flow">'+
+   [["Day 2","Kafka producer"],["Day 2","Kafka topic"],["Day 2","Kafka consumer"],["Day 2","Feast features + FastAPI scoring"],["Day 2","Scored transaction and alert event"],["Day 4","SQLite store"],["Day 4","Streamlit dashboard"]].map(function(n,i){
+     return (i?'<span class="arrow">→</span>':'')+'<div class="node"><em>'+n[0]+'</em>'+esc(n[1])+'</div>';}).join("")+'</div>';
+  h+='<div class="two"><div class="panelbox"><h3>Sprint start date</h3><p class="hint">Set the day you begin. Each day then shows its date, and today is marked.</p><div class="field"><label for="startDate">Day 1 is</label><input type="date" id="startDate"></div></div>'+
+   '<div class="panelbox"><h3>How we work together</h3><div class="loop"><div><b>1 · Build</b>You get the next step with code or commands.</div><div><b>2 · Run</b>Execute it and share the output or error.</div><div><b>3 · Verify</b>Troubleshoot and check the results.</div><div><b>4 · Save</b>Commit working code and update this list.</div></div></div></div>';
+  h+='<div class="panelbox"><h3>Seven rules for finishing in five days</h3><ol class="rules">'+RULES.map(function(r){return '<li>'+fmt(r)+'</li>';}).join("")+'</ol></div>';
+  h+='<div class="panelbox" style="margin-top:20px"><h3>Your data</h3><p class="hint">Progress is stored with this page and mirrored in this browser. Copy a backup before you clear anything.</p>'+
+   '<div class="datactl"><button class="btn" type="button" id="backupBtn">Show backup</button><button class="btn" type="button" id="restoreBtn">Restore from text</button><button class="btn danger" type="button" id="resetBtn">Reset all progress</button></div>'+
+   '<div id="resetConfirm" class="confirm" hidden>This clears every checkbox, note, rating and value. <div><button class="btn danger" type="button" id="resetYes">Yes, clear everything</button><button class="btn" type="button" id="resetNo">Cancel</button></div></div>'+
+   '<textarea class="ta" id="backupText" rows="4" hidden aria-label="Backup text" placeholder="Paste a backup here, then press Restore from text"></textarea><p class="hint" id="dataMsg" role="status"></p></div></section>';
+  return h;
+}
+function renderSetup(){
+  var h='<section class="panel" id="p-setup" hidden><div class="sheethead"><div class="daytag">Setup</div><h2>Skills and software</h2>'+
+   '<p class="lead">Sort every tool into <b>Need it</b>, <b>Have it</b> or <b>Tested</b> (you ran the check command and it worked). Rate each skill honestly. Items you mark Need it or Not yet show you what to install or learn before the day that uses them.</p></div>';
+  h+='<h3 class="sub">Software</h3><div class="stats" id="toolStats"></div><div class="filters" id="toolFilters">'+
+   [["all","All"],["unsorted","Not sorted"],["need","Need it"],["have","Have it"],["tested","Tested"]].map(function(f){return '<button type="button" class="btn" data-filter="'+f[0]+'">'+f[1]+'</button>';}).join("")+'</div>';
+  TOOL_GROUPS.forEach(function(g){
+    h+='<div class="group"><h3>'+esc(g.g)+'<span data-groupcount="'+esc(g.g)+'"></span></h3>';
+    g.items.forEach(function(it){
+      h+='<div class="trow" data-tool="'+it.id+'"><div class="tmain"><div><span class="nm">'+esc(it.n)+'</span><span class="dtag">Day '+it.day+'</span></div><p>'+fmt(it.why)+'</p>'+(it.cmd?codeBlock(it.cmd):'')+'</div>'+
+        seg("tool",it.id,[["Need it","flag","need"],["Have it","accent","have"],["Tested","done","tested"]])+'</div>';
+    });
+    h+='</div>';
+  });
+  h+='<div class="panelbox" style="margin-top:22px"><h3>Install in order of the day you need it</h3>'+
+   '<div class="row"><span class="txt">Day 1</span>'+codeBlock(PIP1)+'</div>'+
+   '<div class="row"><span class="txt">Day 2</span>'+codeBlock("pip install fastapi uvicorn httpx confluent-kafka feast")+'</div>'+
+   '<div class="row"><span class="txt">Day 3 (PyTorch and PyTorch Geometric: follow their official install pages)</span>'+codeBlock("pip install networkx evidently")+'</div>'+
+   '<div class="row"><span class="txt">Day 4</span>'+codeBlock("pip install streamlit")+'</div></div>';
+  h+='<h3 class="sub" style="margin-top:34px">Skills</h3><div class="stats" id="skillStats"></div>';
+  SKILL_GROUPS.forEach(function(g){
+    h+='<div class="group"><h3>'+esc(g.g)+'</h3>';
+    g.items.forEach(function(it){
+      h+='<div class="trow" data-skill="'+it.id+'"><div class="tmain"><div><span class="nm">'+esc(it.n)+'</span><span class="dtag">Day '+it.day+'</span></div><p>Enough to: '+fmt(it.need)+'</p></div>'+
+        seg("skill",it.id,[["Not yet","flag","not-yet"],["Learning","accent","learning"],["Comfortable","done","comfortable"]])+'</div>';
+    });
+    h+='</div>';
+  });
+  return h+'</section>';
+}
+
+var PANELS=["overview","setup","d1","d2","d3","d4","d5"];
+var HASH={overview:"overview",setup:"setup",d1:"day1",d2:"day2",d3:"day3",d4:"day4",d5:"day5"};
+function renderRail(){
+  var h='<button class="rb" type="button" data-go="overview"><span class="rn">Overview</span></button><button class="rb" type="button" data-go="setup"><span class="rn">Setup</span><span class="rp" data-setuppct></span><span class="rd">Skills and software</span></button><div class="railgap"></div>';
+  DAYS.forEach(function(d){
+    h+='<button class="rb" type="button" data-go="'+d.id+'"><span class="rn">Day '+d.n+' · '+esc(d.short)+'</span><span class="rp" data-daypct="'+d.id+'">0%</span><span class="rd" data-raildate="'+d.id+'">&nbsp;</span></button>';
+  });
+  return h;
+}
+
+/* ---------- apply state ---------- */
+var BY_DAY={},BY_TASK={};
+function isDone(it){return it.kind==="pick"?state.picks[it.id]!==undefined:!!state.checks[it.id];}
+function dayDate(i){if(!state.start)return null;var p=state.start.split("-");if(p.length!==3)return null;return new Date(+p[0],+p[1]-1,+p[2]+i);}
+function todayIdx(){var s=dayDate(0);if(!s||isNaN(s))return -999;var n=new Date();n.setHours(0,0,0,0);return Math.round((n-s)/864e5);}
+function dFmt(d){return d.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});}
+
+function applyChecks(){
+  $$("[data-check]").forEach(function(el){
+    var on=!!state.checks[el.getAttribute("data-check")];
+    if(el.checked!==on)el.checked=on;
+    var row=el.closest(".row");if(row)row.classList.toggle("done",on);
+  });
+  $$(".seg[data-kind=pick]").forEach(function(s){
+    var v=state.picks[s.getAttribute("data-id")];
+    $$("button",s).forEach(function(b){var on=v!==undefined&&b.getAttribute("data-val")===String(v);b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);});
+    var row=s.closest(".row");if(row)row.classList.toggle("done",v!==undefined);
+  });
+  $$("[data-value]").forEach(function(el){var v=state.values[el.getAttribute("data-value")]||"";if(document.activeElement!==el&&el.value!==v)el.value=v;});
+  $$("[data-note]").forEach(function(el){var v=state.notes[el.getAttribute("data-note")]||"";if(document.activeElement!==el&&el.value!==v)el.value=v;});
+}
+function applySetup(){
+  var tc={need:0,have:0,tested:0,total:0},sc={"not-yet":0,learning:0,comfortable:0,total:0};
+  $$(".seg[data-kind=tool]").forEach(function(s){
+    var id=s.getAttribute("data-id"),v=state.status[id];tc.total++;if(v)tc[v]++;
+    $$("button",s).forEach(function(b){var on=b.getAttribute("data-val")===v;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);});
+    var row=s.closest(".trow"),f=ui.toolFilter,show=true;
+    if(f==="unsorted")show=!v;else if(f!=="all")show=(v===f);
+    row.hidden=!show;
+  });
+  $$(".seg[data-kind=skill]").forEach(function(s){
+    var id=s.getAttribute("data-id"),v=state.skills[id];sc.total++;if(v)sc[v]++;
+    $$("button",s).forEach(function(b){var on=b.getAttribute("data-val")===v;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);});
+  });
+  var unsorted=tc.total-tc.need-tc.have-tc.tested;
+  var ts=$("#toolStats");
+  if(ts)ts.innerHTML='<div class="stat s-flag"><b>'+tc.need+'</b><span>Still to install</span></div><div class="stat s-accent"><b>'+tc.have+'</b><span>Have it</span></div><div class="stat s-done"><b>'+tc.tested+'</b><span>Tested working</span></div><div class="stat"><b>'+unsorted+'</b><span>Not sorted yet</span></div>';
+  var ss=$("#skillStats");
+  var skUn=sc.total-sc["not-yet"]-sc.learning-sc.comfortable;
+  if(ss)ss.innerHTML='<div class="stat s-flag"><b>'+sc["not-yet"]+'</b><span>Not yet</span></div><div class="stat s-accent"><b>'+sc.learning+'</b><span>Learning</span></div><div class="stat s-done"><b>'+sc.comfortable+'</b><span>Comfortable</span></div><div class="stat"><b>'+skUn+'</b><span>Not rated yet</span></div>';
+  $$("#toolFilters .btn").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-filter")===ui.toolFilter);});
+  var sp=$("[data-setuppct]");if(sp)sp.textContent=tc.tested+"/"+tc.total;
+  var rb=$(".rb[data-go=setup]");if(rb)rb.style.setProperty("--p",(tc.total?Math.round(100*(tc.tested+tc.have)/tc.total):0)+"%");
+}
+function applyProgress(){
+  var all=ITEMS.length,alld=0;
+  DAYS.forEach(function(d){
+    var arr=BY_DAY[d.id]||[],dn=arr.filter(isDone).length,pct=arr.length?Math.round(100*dn/arr.length):0;
+    alld+=dn;
+    $$("[data-daypct="+d.id+"]").forEach(function(e){e.textContent=pct+"%";});
+    $$("[data-daybar="+d.id+"]").forEach(function(e){e.style.width=pct+"%";var w=e.parentNode;if(w)w.classList.toggle("done",pct===100);});
+    $$("[data-daycount="+d.id+"]").forEach(function(e){e.textContent=dn+" of "+arr.length+" items";});
+    var rb=$('.rb[data-go='+d.id+']');if(rb)rb.style.setProperty("--p",pct+"%");
+    d.tasks.forEach(function(t){
+      var ta=BY_TASK[t.id]||[],td=ta.filter(isDone).length;
+      var c=$('[data-tcount='+t.id+']');if(c)c.textContent=td+"/"+ta.length;
+      var el=$('[data-task='+t.id+']');if(el)el.classList.toggle("complete",td===ta.length);
+    });
+  });
+  var pc=all?Math.round(100*alld/all):0;
+  $("#ringpct").textContent=pc+"%";
+  $("#ringfg").setAttribute("stroke-dashoffset",(157.08*(1-pc/100)).toFixed(2));
+}
+function applyDates(){
+  var ti=todayIdx();
+  DAYS.forEach(function(d,i){
+    var dt=dayDate(i),txt=dt?dFmt(dt):"date not set";
+    $$("[data-daydate="+d.id+"]").forEach(function(e){e.textContent=txt;});
+    var rd=$("[data-raildate="+d.id+"]");
+    if(rd)rd.innerHTML=dt?(esc(dFmt(dt))+(ti===i?' <span class="today">· today</span>':'')):"&nbsp;";
+    var td=$("[data-today="+d.id+"]");if(td)td.hidden=(ti!==i);
+  });
+  var sd=$("#startDate");if(sd&&sd.value!==state.start)sd.value=state.start||"";
+}
+function applyAll(){
+  applyChecks();applySetup();applyProgress();applyDates();
+  document.body.classList.toggle("hide-done",ui.hideDone);
+  var hb=$("#hidebtn");hb.classList.toggle("on",ui.hideDone);hb.setAttribute("aria-pressed",ui.hideDone);
+}
+
+/* ---------- saving ---------- */
+var dbRef=null,saving=false,dirty=false,saveTimer=null,dbFailed=false;
+function setSave(kind){
+  var el=$("#savestat"),tx=$("#savetxt");
+  el.setAttribute("data-s",kind==="saved"?"saved":kind==="saving"?"saving":kind==="local"?"local":"loading");
+  var t=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  tx.textContent=kind==="saved"?"Saved · "+t:kind==="saving"?"Saving…":kind==="local"?"Saved in this browser only":"Loading saved progress…";
+}
+function touch(){
+  state.updatedAt=Date.now();localSave();dirty=true;
+  if(dbRef){setSave("saving");clearTimeout(saveTimer);saveTimer=setTimeout(flush,450);}else setSave("local");
+}
+function flush(){
+  if(!dbRef||saving)return;
+  saving=true;dirty=false;
+  dbRef.set(JSON.parse(JSON.stringify(state))).then(function(){
+    saving=false;if(dirty){flush();}else setSave("saved");
+  },function(){
+    saving=false;dbFailed=true;setSave("local");
+  });
+}
+function onSnap(snap){
+  if(snap.metadata&&snap.metadata.hasPendingWrites)return;
+  if(!snap.exists){
+    if(state.updatedAt>0)flush();else setSave("saved");
+    return;
+  }
+  var r=snap.data(),ru=Number(r.updatedAt)||0;
+  if(ru>state.updatedAt){
+    state=normalize(JSON.parse(JSON.stringify(r)));localSave();applyAll();setSave("saved");
+  }else if(ru<state.updatedAt){flush();}
+  else setSave("saved");
+}
+function initDb(){
+  try{
+    if(!window.claude||!window.claude.use){setSave("local");return;}
+    window.claude.use("db").then(function(db){
+      if(!db){setSave("local");return;}
+      dbRef=db.doc("progress/main");
+      dbRef.onSnapshot(onSnap,function(){dbRef=null;setSave("local");});
+    },function(){setSave("local");});
+  }catch(e){setSave("local");}
+}
+
+/* ---------- navigation ---------- */
+function show(id,noHash){
+  if(PANELS.indexOf(id)<0)id="overview";
+  PANELS.forEach(function(p){var el=$("#p-"+p);if(el)el.hidden=(p!==id);});
+  $$(".rb").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-go")===id);});
+  if(!noHash){try{location.hash=HASH[id];}catch(e){}}
+  var active=$(".rb.on");if(active&&active.scrollIntoView&&window.matchMedia("(max-width:860px)").matches){try{active.scrollIntoView({block:"nearest",inline:"center"});}catch(e){}}
+}
+function fromHash(){
+  var h=(location.hash||"").replace("#","");
+  for(var k in HASH){if(HASH[k]===h)return k;}
+  return null;
+}
+function nextUp(){
+  for(var i=0;i<ITEMS.length;i++){
+    if(!isDone(ITEMS[i])){
+      var it=ITEMS[i];show(it.day);
+      var row=$('[data-row="'+it.id+'"]');
+      if(row){
+        var d=row.closest("details");if(d)d.open=true;
+        row.classList.remove("flash");void row.offsetWidth;row.classList.add("flash");
+        var reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+        row.scrollIntoView({block:"center",behavior:reduce?"auto":"smooth"});
+      }
+      return;
+    }
+  }
+  show("overview");
+  $("#dataMsg").textContent="Every item is ticked. Check the submission list once more, then submit.";
+}
+
+/* ---------- events ---------- */
+document.addEventListener("change",function(e){
+  var t=e.target;
+  if(t.matches("[data-check]")){
+    var id=t.getAttribute("data-check");
+    if(t.checked)state.checks[id]=1;else delete state.checks[id];
+    touch();applyChecks();applyProgress();
+  }else if(t.id==="startDate"){
+    state.start=t.value||"";touch();applyDates();
+  }
+});
+document.addEventListener("input",function(e){
+  var t=e.target;
+  if(t.matches("[data-note]")){var id=t.getAttribute("data-note");if(t.value)state.notes[id]=t.value;else delete state.notes[id];touch();}
+  else if(t.matches("[data-value]")){var k=t.getAttribute("data-value");if(t.value)state.values[k]=t.value;else delete state.values[k];touch();}
+});
+document.addEventListener("click",function(e){
+  var t=e.target.closest("button");if(!t)return;
+  if(t.matches("[data-copy]")){
+    var txt=t.closest(".code").querySelector("pre").textContent;
+    var done=function(){var o=t.textContent;t.textContent="Copied";setTimeout(function(){t.textContent="Copy";},1200);};
+    try{navigator.clipboard.writeText(txt).then(done,function(){var r=document.createRange();r.selectNodeContents(t.closest(".code").querySelector("pre"));var s=getSelection();s.removeAllRanges();s.addRange(r);t.textContent="Press Ctrl+C";setTimeout(function(){t.textContent="Copy";},1800);});}
+    catch(err){t.textContent="Select text";setTimeout(function(){t.textContent="Copy";},1500);}
+    return;
+  }
+  if(t.matches("[data-go]")){show(t.getAttribute("data-go"));window.scrollTo(0,0);return;}
+  if(t.matches("[data-expand]")||t.matches("[data-collapse]")){
+    var dayId=t.getAttribute("data-expand")||t.getAttribute("data-collapse"),open=t.hasAttribute("data-expand");
+    $$("#p-"+dayId+" details.task").forEach(function(d){d.open=open;});return;
+  }
+  if(t.matches("[data-filter]")){ui.toolFilter=t.getAttribute("data-filter");applySetup();return;}
+  var sg=t.closest(".seg");
+  if(sg){
+    var kind=sg.getAttribute("data-kind"),id=sg.getAttribute("data-id"),val=t.getAttribute("data-val");
+    var map=kind==="pick"?state.picks:kind==="tool"?state.status:state.skills;
+    if(map[id]===val||(kind==="pick"&&String(map[id])===val))delete map[id];
+    else map[id]=(kind==="pick")?Number(val):val;
+    touch();applyChecks();applySetup();applyProgress();return;
+  }
+  if(t.id==="nextbtn"){nextUp();return;}
+  if(t.id==="hidebtn"){ui.hideDone=!ui.hideDone;uiSave();applyAll();return;}
+  if(t.id==="backupBtn"){
+    var ta=$("#backupText");ta.hidden=false;ta.value=JSON.stringify(state);ta.select();
+    var msg=$("#dataMsg");
+    try{navigator.clipboard.writeText(ta.value).then(function(){msg.textContent="Backup copied. Paste it somewhere safe.";},function(){msg.textContent="Select the text above and copy it.";});}
+    catch(err){msg.textContent="Select the text above and copy it.";}
+    return;
+  }
+  if(t.id==="restoreBtn"){
+    var ta2=$("#backupText"),m2=$("#dataMsg");
+    if(ta2.hidden){ta2.hidden=false;ta2.value="";ta2.focus();m2.textContent="Paste a backup, then press Restore from text again.";return;}
+    try{
+      var parsed=JSON.parse(ta2.value);
+      if(!parsed||typeof parsed!=="object"||!parsed.checks)throw new Error("bad");
+      state=normalize(parsed);state.updatedAt=Date.now();localSave();flush();applyAll();m2.textContent="Backup restored.";ta2.hidden=true;
+      if(!dbRef)setSave("local");
+    }catch(err){m2.textContent="That text is not a valid backup.";}
+    return;
+  }
+  if(t.id==="resetBtn"){$("#resetConfirm").hidden=false;return;}
+  if(t.id==="resetNo"){$("#resetConfirm").hidden=true;return;}
+  if(t.id==="resetYes"){
+    state=blank();state.updatedAt=Date.now();localSave();
+    if(dbRef){setSave("saving");flush();}else setSave("local");
+    applyAll();$("#resetConfirm").hidden=true;$("#dataMsg").textContent="All progress cleared.";
+    return;
+  }
+});
+window.addEventListener("hashchange",function(){var k=fromHash();if(k)show(k,true);});
+
+/* ---------- boot ---------- */
+$("#rail").innerHTML=renderRail();
+$("#main").innerHTML=renderOverview()+renderSetup()+DAYS.map(renderDay).join("");
+DAYS.forEach(function(d){BY_DAY[d.id]=ITEMS.filter(function(i){return i.day===d.id;});});
+DAYS.forEach(function(d){d.tasks.concat([{id:d.id+"w"}]).forEach(function(t){BY_TASK[t.id]=ITEMS.filter(function(i){return i.task===t.id;});});});
+applyAll();
+show(fromHash()||"overview",true);
+setSave(dbRef?"saved":"loading");
+initDb();
+})();
+</script>
+
+</body></html>
